@@ -1,12 +1,14 @@
 require 'rubygems'
 require 'sinatra'
 require 'sinatra/contrib/all'
+require 'pony'
 
 get '/' do
   erb "<p>Hello Epta</p>"
 end
 
 get '/about' do
+  @error= 'ATAKA-ATAKA'
   erb :about
 end
 
@@ -25,20 +27,44 @@ post '/visit' do
   @phone = params[:phone]
   @barber = params[:barber]
   @color = params[:color]
-  dbase = File.open 'public/customers.txt', 'a'
-  dbase.puts  "#{@customer} | #{@date} | #{@phone} | #{@barber} | #{@color}\n"
-  dbase.close
+    hh = {:customer=>'Enter your name', 
+        :phone=>'Enter your phone number', 
+        :date=>'Enter your arrival time', 
+        :color=>'Choose your color'}
+
+        @error = hh.select {|key, value| params[key]==""}.values.join(", ")
+      if @error != ''
+            erb :visit
+      else
+       dbase = File.open 'public/customers.txt', 'a'
+       dbase.puts  "#{@customer} | #{@date} | #{@phone} | #{@barber} | #{@color}\n"
+       dbase.close
+       erb "Your data are: #{@customer} | #{@date} | #{@phone} | #{@barber} | #{@color}\n"
+      end 
   erb :visit
 end
 
 post '/contacts' do
   @email = params[:email]
   @report = params[:report]
-  messages = File.open 'public/messages.txt', 'a'
-  messages.puts "#{@email} | #{@report}\n"
-  messages.close
-  erb "<p>Спасибо за ваш отзыв</p> <a href='/'>HOME</a>"
-end
+    dh = {
+        :email=>'Enter your email', 
+        :report=>'Enter your message' 
+          }
+        @error = dh.select {|key, value| params[key]==""}.values.join(", ")
+      if @error != ''
+            erb :contacts
+      else
+      messages = File.open 'public/messages.txt', 'a'
+      messages.puts "#{@email} | #{@report}\n"
+      messages.close
+
+      Pony.mail(:to => 'koq@nextmail.ru', :via => :sendmail, :from => "#{@email}", :body => "#{@report}" )
+      erb "<p>Спасибо за ваш отзыв</p> <a href='/'>HOME</a>"
+
+      end 
+
+  end
 
 get '/admen' do
   erb :admen
